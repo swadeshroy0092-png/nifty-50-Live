@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Stock Snapshot</title>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+    
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
     <style>
@@ -11,68 +18,109 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f6f8fa;
-            color: #24292e;
+            background-color: #f4f7f6; /* Lighter grey background */
+            color: #333;
         }
+        
+        /* New container for the app */
+        .container {
+            max-width: 1600px;
+            margin: 20px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
         h1 {
-            border-bottom: 2px solid #eaecef;
-            padding-bottom: 10px;
+            text-align: center;
+            color: #2c3e50;
+            border-bottom: none;
+            margin-bottom: 10px;
         }
+        
         #last-updated {
+            text-align: center;
+            display: block;
             font-style: italic;
             color: #586069;
+            margin-bottom: 30px;
         }
-        #stock-table-container {
-            width: 100%;
-            overflow-x: auto; /* Allows horizontal scrolling for many columns */
-            border: 1px solid #d1d5da;
-            border-radius: 6px;
-            margin-top: 20px;
+        
+        /* DataTables styling overrides */
+        #stockTable {
+            width: 100% !important; /* Force table to be full width */
+            border-collapse: collapse !important;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eaecef;
-            text-align: left;
-            white-space: nowrap; /* Prevents text from wrapping */
-        }
-        thead {
-            background-color: #f6f8fa;
-        }
-        th {
+
+        #stockTable thead th {
+            background-color: #34495e; /* Dark blue header */
+            color: #ffffff;
             font-weight: 600;
+            padding: 12px 15px;
         }
-        tbody tr:nth-child(even) {
-            background-color: #ffffff;
+
+        #stockTable tbody tr:hover {
+            background-color: #f1f1f1; /* Hover effect */
+            cursor: pointer;
         }
+        
+        #stockTable td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eaecef;
+        }
+
+        /* Style the search box */
+        .dt-search input {
+            width: 300px;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        /* Style the pagination buttons */
+        .dt-paging-button {
+            padding: 5px 10px !important;
+            border-radius: 4px !important;
+            border: 1px solid #ddd !important;
+            margin: 0 2px !important;
+        }
+        .dt-paging-button.current {
+            background: #34495e !important;
+            color: white !important;
+            border-color: #34495e !important;
+        }
+
         .positive {
             color: #22863a; /* Green */
+            font-weight: 500;
         }
         .negative {
             color: #cb2431; /* Red */
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
-    <h1>Nifty 50 Stock Snapshot</h1>
-    <p>Last data refresh: <strong id="last-updated">Loading...</strong></p>
 
-    <div id="stock-table-container">
-        <p>Loading data from GitHub...</p>
+    <div class="container">
+        <h1>Nifty 50 Stock Snapshot</h1>
+        <span id="last-updated">Loading...</span>
+
+        <table id="stockTable" class="display">
+            <thead>
+                </thead>
+            <tbody>
+                </tbody>
+        </table>
     </div>
-
+    
     <script>
-        // The path to your CSV file in this repository
         const csvFilePath = 'stock_snapshot_data.csv';
-
-        // Add a cache-busting query parameter to get the latest file
         const url = `${csvFilePath}?t=${new Date().getTime()}`;
 
-        // These are the columns from your CSV we will display.
-        // You can add or remove columns from this list.
+        // You can still control which columns to show
         const COLUMNS_TO_DISPLAY = [
             'ticker', 
             'longName', 
@@ -95,40 +143,52 @@
             skipEmptyLines: true,
             complete: function(results) {
                 console.log("Data parsed:", results.data);
+                
+                // 1. Build the table HTML
                 buildTable(results.data);
                 
-                // Set the "Last Updated" timestamp from the first row of data
+                // 2. SET THE "LAST UPDATED" TIMESTAMP
                 if (results.data.length > 0) {
                     const lastUpdatedTimestamp = results.data[0].fetchTimestamp;
                     const formattedDate = new Date(lastUpdatedTimestamp).toLocaleString();
-                    document.getElementById('last-updated').textContent = formattedDate;
+                    document.getElementById('last-updated').textContent = "Last data refresh: " + formattedDate;
                 }
+                
+                // 3. !!!!!!! THIS IS THE MAGIC !!!!!!!
+                // Initialize DataTables on our table
+                new DataTable('#stockTable', {
+                    responsive: true, // Good for mobile
+                    pageLength: 20,   // Show 20 rows per page
+                    // Customizes the layout
+                    layout: {
+                        topStart: 'search',  // Puts search box in top left
+                        topEnd: null,        // Removes default elements
+                        bottomStart: 'info', // "Showing 1 of 20..."
+                        bottomEnd: 'paging'  // "Previous 1 2 3 ... Next"
+                    }
+                });
             },
             error: function(err) {
                 console.error("Error parsing CSV:", err);
-                document.getElementById('stock-table-container').innerHTML = "<p>Error loading data. Please check the console.</p>";
+                document.getElementById('stockTable').innerHTML = "<tr><td>Error loading data.</td></tr>";
             }
         });
 
         function buildTable(data) {
-            let tableHtml = '<table>';
-            
-            // 1. Build Table Header (from our column list)
-            tableHtml += '<thead><tr>';
+            let headerHtml = '<tr>';
             COLUMNS_TO_DISPLAY.forEach(col => {
-                tableHtml += `<th>${col}</th>`;
+                headerHtml += `<th>${col}</th>`;
             });
-            tableHtml += '</tr></thead>';
-            
-            // 2. Build Table Body (from the data)
-            tableHtml += '<tbody>';
+            headerHtml += '</tr>';
+
+            let bodyHtml = '';
             data.forEach(row => {
-                tableHtml += '<tr>';
+                bodyHtml += '<tr>';
                 COLUMNS_TO_DISPLAY.forEach(col => {
-                    let value = row[col] || 'N/A'; // Get value or set 'N/A'
+                    let value = row[col] || 'N/A';
                     let className = '';
 
-                    // --- Format specific columns ---
+                    // --- Formatting (same as before) ---
                     if (col === 'regularMarketChangePercent') {
                         const num = parseFloat(value);
                         if (!isNaN(num)) {
@@ -141,18 +201,18 @@
                         if (!isNaN(num)) value = num.toFixed(2);
                     } else if (col === 'volume' || col === 'marketCap') {
                         const num = parseInt(value, 10);
-                        if (!isNaN(num)) value = num.toLocaleString(); // Add commas
+                        if (!isNaN(num)) value = num.toLocaleString();
                     }
                     // --- End formatting ---
                     
-                    tableHtml += `<td class="${className}">${value}</td>`;
+                    bodyHtml += `<td class="${className}">${value}</td>`;
                 });
-                tableHtml += '</tr>';
+                bodyHtml += '</tr>';
             });
-            tableHtml += '</tbody></table>';
             
-            // 3. Display the table
-            document.getElementById('stock-table-container').innerHTML = tableHtml;
+            // 3. Inject the HTML into the existing table elements
+            document.querySelector('#stockTable thead').innerHTML = headerHtml;
+            document.querySelector('#stockTable tbody').innerHTML = bodyHtml;
         }
     </script>
 </body>
