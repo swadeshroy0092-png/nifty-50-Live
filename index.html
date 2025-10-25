@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Stock Snapshot</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f6f8fa;
+            color: #24292e;
+        }
+        h1 {
+            border-bottom: 2px solid #eaecef;
+            padding-bottom: 10px;
+        }
+        #last-updated {
+            font-style: italic;
+            color: #586069;
+        }
+        #stock-table-container {
+            width: 100%;
+            overflow-x: auto; /* Allows horizontal scrolling for many columns */
+            border: 1px solid #d1d5da;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eaecef;
+            text-align: left;
+            white-space: nowrap; /* Prevents text from wrapping */
+        }
+        thead {
+            background-color: #f6f8fa;
+        }
+        th {
+            font-weight: 600;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #ffffff;
+        }
+        .positive {
+            color: #22863a; /* Green */
+        }
+        .negative {
+            color: #cb2431; /* Red */
+        }
+    </style>
+</head>
+<body>
+    <h1>Nifty 50 Stock Snapshot</h1>
+    <p>Last data refresh: <strong id="last-updated">Loading...</strong></p>
+
+    <div id="stock-table-container">
+        <p>Loading data from GitHub...</p>
+    </div>
+
+    <script>
+        // The path to your CSV file in this repository
+        const csvFilePath = 'stock_snapshot_data.csv';
+
+        // Add a cache-busting query parameter to get the latest file
+        const url = `${csvFilePath}?t=${new Date().getTime()}`;
+
+        // These are the columns from your CSV we will display.
+        // You can add or remove columns from this list.
+        const COLUMNS_TO_DISPLAY = [
+            'ticker', 
+            'longName', 
+            'currentPrice', 
+            'regularMarketChange', 
+            'regularMarketChangePercent', 
+            'volume', 
+            'dayHigh', 
+            'dayLow',
+            'fiftyTwoWeekHigh',
+            'fiftyTwoWeekLow',
+            'marketCap',
+            'trailingPE'
+        ];
+
+        // Use PapaParse to fetch and parse the CSV
+        Papa.parse(url, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                console.log("Data parsed:", results.data);
+                buildTable(results.data);
+                
+                // Set the "Last Updated" timestamp from the first row of data
+                if (results.data.length > 0) {
+                    const lastUpdatedTimestamp = results.data[0].fetchTimestamp;
+                    const formattedDate = new Date(lastUpdatedTimestamp).toLocaleString();
+                    document.getElementById('last-updated').textContent = formattedDate;
+                }
+            },
+            error: function(err) {
+                console.error("Error parsing CSV:", err);
+                document.getElementById('stock-table-container').innerHTML = "<p>Error loading data. Please check the console.</p>";
+            }
+        });
+
+        function buildTable(data) {
+            let tableHtml = '<table>';
+            
+            // 1. Build Table Header (from our column list)
+            tableHtml += '<thead><tr>';
+            COLUMNS_TO_DISPLAY.forEach(col => {
+                tableHtml += `<th>${col}</th>`;
+            });
+            tableHtml += '</tr></thead>';
+            
+            // 2. Build Table Body (from the data)
+            tableHtml += '<tbody>';
+            data.forEach(row => {
+                tableHtml += '<tr>';
+                COLUMNS_TO_DISPLAY.forEach(col => {
+                    let value = row[col] || 'N/A'; // Get value or set 'N/A'
+                    let className = '';
+
+                    // --- Format specific columns ---
+                    if (col === 'regularMarketChangePercent') {
+                        const num = parseFloat(value);
+                        if (!isNaN(num)) {
+                            value = (num * 100).toFixed(2) + '%';
+                            if (num > 0) className = 'positive';
+                            if (num < 0) className = 'negative';
+                        }
+                    } else if (col === 'regularMarketChange' || col === 'currentPrice' || col === 'dayHigh' || col === 'dayLow') {
+                        const num = parseFloat(value);
+                        if (!isNaN(num)) value = num.toFixed(2);
+                    } else if (col === 'volume' || col === 'marketCap') {
+                        const num = parseInt(value, 10);
+                        if (!isNaN(num)) value = num.toLocaleString(); // Add commas
+                    }
+                    // --- End formatting ---
+                    
+                    tableHtml += `<td class="${className}">${value}</td>`;
+                });
+                tableHtml += '</tr>';
+            });
+            tableHtml += '</tbody></table>';
+            
+            // 3. Display the table
+            document.getElementById('stock-table-container').innerHTML = tableHtml;
+        }
+    </script>
+</body>
+</html>
