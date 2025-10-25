@@ -1,20 +1,22 @@
 name: Fetch Stock Data (Every 30 Mins)
 
 on:
-  workflow_dispatch: # Allows you to run it manually
+  workflow_dispatch:
   schedule:
-    # Runs at minute 0 and 30 past every hour
     - cron: '*/30 * * * *'
 
 jobs:
   fetch-and-commit:
     runs-on: ubuntu-latest
-    permissions: # Added permissions block
-      contents: write # Grants write permission to the bot
+    permissions:
+      contents: write 
     steps:
       # 1. Checks out your repository's code
+      # MODIFIED: Added fetch-depth: 0 to get the full history
       - name: Check out repo
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 
 
       # 2. Sets up a Python environment
       - name: Set up Python
@@ -22,15 +24,19 @@ jobs:
         with:
           python-version: '3.10'
 
-      # 3. Installs the required libraries
+      # 3. Install Python dependencies
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      # 4. Runs your Python script to fetch data
+      # 4. ADDED: Pull latest changes to avoid race conditions
+      - name: Pull latest changes
+        run: git pull origin main
+
+      # 5. Runs your Python script to fetch data
       - name: Run data fetch script
         run: python fetch_stock_data.py 
 
-      # 5. Commits the new/updated data file back to your repo
+      # 6. Commits the new/updated data file back to your repo
       - name: Commit and push data
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
