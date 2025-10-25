@@ -3,102 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Stock Snapshot</title>
+    <title>Live Stock Snapshot - Enhanced</title>
     
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     
     <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
-    
     <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     
     <style>
+        /* General Body Styling */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Modern font stack */
             margin: 0;
-            padding: 20px;
-            background-color: #f4f7f6; /* Lighter grey background */
+            padding: 0; /* Let container handle padding */
+            background-color: #f0f2f5; /* Light grey background for the page */
             color: #333;
-        }
-        
-        /* New container for the app */
-        .container {
-            max-width: 1600px;
-            margin: 20px auto;
-            padding: 30px;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            line-height: 1.6;
         }
 
+        /* Main Content Container */
+        .container {
+            max-width: 1400px; /* Slightly wider container */
+            margin: 40px auto; /* More vertical margin */
+            padding: 30px 40px; /* More padding inside */
+            background-color: #ffffff;
+            border-radius: 12px; /* Softer rounded corners */
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08); /* More pronounced shadow */
+        }
+
+        /* Header (Title) Styling */
         h1 {
             text-align: center;
-            color: #2c3e50;
-            border-bottom: none;
+            color: #2c3e50; /* Darker blue for prominence */
             margin-bottom: 10px;
+            font-size: 2.2em; /* Larger title */
+            font-weight: 600; /* Bolder title */
         }
         
+        /* Last Updated Info */
         #last-updated {
             text-align: center;
             display: block;
             font-style: italic;
-            color: #586069;
+            color: #7f8c8d; /* Muted grey */
             margin-bottom: 30px;
+            font-size: 0.9em;
         }
         
-        /* DataTables styling overrides */
+        /* DataTables Base Styling */
         #stockTable {
-            width: 100% !important; /* Force table to be full width */
+            width: 100% !important;
             border-collapse: collapse !important;
+            margin-top: 20px; /* Space above table */
+            border-radius: 8px; /* Rounded corners for the table itself */
+            overflow: hidden; /* Ensures rounded corners clip content */
         }
 
+        /* Table Header (Thead) */
         #stockTable thead th {
-            background-color: #34495e; /* Dark blue header */
+            background-color: #4a69bd; /* Primary blue color for header */
             color: #ffffff;
             font-weight: 600;
-            padding: 12px 15px;
+            padding: 14px 18px; /* Increased padding */
+            text-align: left;
+            border-bottom: none; /* Remove default border */
         }
-
+        
+        /* Table Body (Tbody) */
+        #stockTable tbody tr {
+            transition: background-color 0.2s ease-in-out; /* Smooth hover transition */
+        }
+        #stockTable tbody tr:nth-child(even) {
+            background-color: #f9f9f9; /* Subtle alternating row background */
+        }
         #stockTable tbody tr:hover {
-            background-color: #f1f1f1; /* Hover effect */
+            background-color: #e8f0fe; /* Light blue on hover */
             cursor: pointer;
         }
         
+        /* Table Cells (Td) */
         #stockTable td {
-            padding: 10px 15px;
-            border-bottom: 1px solid #eaecef;
+            padding: 12px 18px; /* Increased padding */
+            border-bottom: 1px solid #ebf0f5; /* Lighter border for cells */
+            color: #444; /* Slightly darker text */
         }
 
-        /* Style the search box */
+        /* Search Input Styling */
+        .dt-search label {
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+            display: block;
+        }
         .dt-search input {
-            width: 300px;
-            padding: 8px 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            margin-bottom: 20px;
+            width: 350px; /* Slightly wider search bar */
+            padding: 10px 15px; /* More padding */
+            border: 1px solid #ccd0d5; /* Softer border */
+            border-radius: 8px; /* Rounded corners */
+            margin-bottom: 25px; /* More space below search */
+            font-size: 1em;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.06); /* Inner shadow */
+        }
+        .dt-search input:focus {
+            outline: none;
+            border-color: #4a69bd; /* Highlight border on focus */
+            box-shadow: 0 0 0 3px rgba(74, 105, 189, 0.2); /* Soft blue glow */
         }
         
-        /* Style the pagination buttons */
+        /* Pagination Buttons */
         .dt-paging-button {
-            padding: 5px 10px !important;
-            border-radius: 4px !important;
-            border: 1px solid #ddd !important;
-            margin: 0 2px !important;
+            padding: 8px 15px !important;
+            border-radius: 6px !important;
+            border: 1px solid #d1d5da !important;
+            margin: 0 4px !important;
+            background-color: #fdfdfd !important;
+            color: #444 !important;
+            transition: all 0.2s ease-in-out;
         }
         .dt-paging-button.current {
-            background: #34495e !important;
+            background: #4a69bd !important; /* Primary blue for active page */
             color: white !important;
-            border-color: #34495e !important;
+            border-color: #4a69bd !important;
+            font-weight: 600;
+        }
+        .dt-paging-button:hover:not(.current) {
+            background-color: #e0e6f2 !important; /* Light blue hover for other pages */
+            border-color: #b0c4de !important;
+            color: #222 !important;
+        }
+        .dt-paging-button.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #f0f0f0 !important;
+            color: #888 !important;
         }
 
+        /* Info text ("Showing X to Y of Z entries") */
+        .dt-info {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
+
+        /* Positive/Negative Changes */
         .positive {
-            color: #22863a; /* Green */
-            font-weight: 500;
+            color: #27ae60; /* More vibrant green */
+            font-weight: 600;
         }
         .negative {
-            color: #cb2431; /* Red */
-            font-weight: 500;
+            color: #e74c3c; /* More vibrant red */
+            font-weight: 600;
+        }
+        
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            .dt-search input {
+                width: 100%;
+            }
+            #stockTable thead th, #stockTable tbody td {
+                padding: 10px;
+            }
         }
     </style>
 </head>
@@ -109,10 +182,8 @@
         <span id="last-updated">Loading...</span>
 
         <table id="stockTable" class="display">
-            <thead>
-                </thead>
-            <tbody>
-                </tbody>
+            <thead></thead>
+            <tbody></tbody>
         </table>
     </div>
     
@@ -120,7 +191,6 @@
         const csvFilePath = 'stock_snapshot_data.csv';
         const url = `${csvFilePath}?t=${new Date().getTime()}`;
 
-        // You can still control which columns to show
         const COLUMNS_TO_DISPLAY = [
             'ticker', 
             'longName', 
@@ -136,7 +206,6 @@
             'trailingPE'
         ];
 
-        // Use PapaParse to fetch and parse the CSV
         Papa.parse(url, {
             download: true,
             header: true,
@@ -144,27 +213,22 @@
             complete: function(results) {
                 console.log("Data parsed:", results.data);
                 
-                // 1. Build the table HTML
                 buildTable(results.data);
                 
-                // 2. SET THE "LAST UPDATED" TIMESTAMP
                 if (results.data.length > 0) {
                     const lastUpdatedTimestamp = results.data[0].fetchTimestamp;
                     const formattedDate = new Date(lastUpdatedTimestamp).toLocaleString();
                     document.getElementById('last-updated').textContent = "Last data refresh: " + formattedDate;
                 }
                 
-                // 3. !!!!!!! THIS IS THE MAGIC !!!!!!!
-                // Initialize DataTables on our table
                 new DataTable('#stockTable', {
-                    responsive: true, // Good for mobile
-                    pageLength: 20,   // Show 20 rows per page
-                    // Customizes the layout
+                    responsive: true,
+                    pageLength: 20,
                     layout: {
-                        topStart: 'search',  // Puts search box in top left
-                        topEnd: null,        // Removes default elements
-                        bottomStart: 'info', // "Showing 1 of 20..."
-                        bottomEnd: 'paging'  // "Previous 1 2 3 ... Next"
+                        topStart: 'search',
+                        topEnd: null,
+                        bottomStart: 'info',
+                        bottomEnd: 'paging'
                     }
                 });
             },
@@ -177,7 +241,9 @@
         function buildTable(data) {
             let headerHtml = '<tr>';
             COLUMNS_TO_DISPLAY.forEach(col => {
-                headerHtml += `<th>${col}</th>`;
+                // Capitalize first letter of column names for display
+                const displayName = col.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                headerHtml += `<th>${displayName}</th>`;
             });
             headerHtml += '</tr>';
 
@@ -188,7 +254,7 @@
                     let value = row[col] || 'N/A';
                     let className = '';
 
-                    // --- Formatting (same as before) ---
+                    // --- Formatting ---
                     if (col === 'regularMarketChangePercent') {
                         const num = parseFloat(value);
                         if (!isNaN(num)) {
@@ -196,7 +262,7 @@
                             if (num > 0) className = 'positive';
                             if (num < 0) className = 'negative';
                         }
-                    } else if (col === 'regularMarketChange' || col === 'currentPrice' || col === 'dayHigh' || col === 'dayLow') {
+                    } else if (col === 'regularMarketChange' || col === 'currentPrice' || col === 'dayHigh' || col === 'dayLow' || col === 'fiftyTwoWeekHigh' || col === 'fiftyTwoWeekLow' || col === 'trailingPE') {
                         const num = parseFloat(value);
                         if (!isNaN(num)) value = num.toFixed(2);
                     } else if (col === 'volume' || col === 'marketCap') {
@@ -210,7 +276,6 @@
                 bodyHtml += '</tr>';
             });
             
-            // 3. Inject the HTML into the existing table elements
             document.querySelector('#stockTable thead').innerHTML = headerHtml;
             document.querySelector('#stockTable tbody').innerHTML = bodyHtml;
         }
